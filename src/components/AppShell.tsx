@@ -1,5 +1,6 @@
+import * as React from "react";
+import { useState } from "react";
 import { Link as TLink, Outlet, useRouterState } from "@tanstack/react-router";
-const Link = TLink as unknown as React.ComponentType<{ to: string; params?: any; className?: string; activeProps?: any; children?: React.ReactNode }>;
 import {
   LayoutDashboard,
   Bot,
@@ -19,7 +20,13 @@ import {
 import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+
+const Link = TLink as unknown as React.ComponentType<{
+  to: string;
+  params?: Record<string, string>;
+  className?: string;
+  children?: React.ReactNode;
+}>;
 
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
 const NAV: NavItem[] = [
