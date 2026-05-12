@@ -20,7 +20,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-const NAV = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; exact?: boolean };
+const NAV: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/agent", label: "AI Trade Agent", icon: Bot },
   { to: "/app/new-deal", label: "New Deal", icon: PlusCircle },
@@ -30,7 +31,7 @@ const NAV = [
   { to: "/app/risk", label: "Risk Analysis", icon: Shield },
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/settings", label: "Settings", icon: Settings },
-] as const;
+];
 
 export function AppShell() {
   const { location } = useRouterState();
