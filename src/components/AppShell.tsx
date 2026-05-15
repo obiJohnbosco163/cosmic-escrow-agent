@@ -1,6 +1,5 @@
 import * as React from "react";
-import { useState } from "react";
-import { Link as TLink, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link as TLink, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Bot,
