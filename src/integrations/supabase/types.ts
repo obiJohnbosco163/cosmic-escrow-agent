@@ -14,7 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      deals: {
+        Row: {
+          amount: number
+          commodity: string | null
+          counterparty: string | null
+          created_at: string
+          currency: string
+          destination: string | null
+          documents: Json
+          id: string
+          milestones: Json
+          origin: string | null
+          risk_score: number | null
+          status: string
+          title: string
+          trustless_contract_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          commodity?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          destination?: string | null
+          documents?: Json
+          id?: string
+          milestones?: Json
+          origin?: string | null
+          risk_score?: number | null
+          status?: string
+          title: string
+          trustless_contract_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          commodity?: string | null
+          counterparty?: string | null
+          created_at?: string
+          currency?: string
+          destination?: string | null
+          documents?: Json
+          id?: string
+          milestones?: Json
+          origin?: string | null
+          risk_score?: number | null
+          status?: string
+          title?: string
+          trustless_contract_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          company: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          role: string | null
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          role?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

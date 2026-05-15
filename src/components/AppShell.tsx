@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useState } from "react";
-import { Link as TLink, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link as TLink, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useAuth } from "@/lib/auth";
 import {
   LayoutDashboard,
   Bot,
@@ -44,7 +44,10 @@ const NAV: NavItem[] = [
 export function AppShell() {
   const { location } = useRouterState();
   const path = location.pathname;
-  const [walletConnected, setWalletConnected] = useState(false);
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const wallet = profile?.wallet_address ?? null;
+  const initials = wallet ? `${wallet.slice(0, 2)}` : "AP";
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -80,13 +83,24 @@ export function AppShell() {
         </nav>
 
         <div className="space-y-3 p-4">
+          <div className="rounded-2xl border border-border bg-background/40 p-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Connected wallet</div>
+            <div className="mt-1 truncate font-mono text-xs text-foreground" title={wallet ?? ""}>
+              {wallet ? `${wallet.slice(0, 6)}…${wallet.slice(-6)}` : "Not connected"}
+            </div>
+            {profile?.role && (
+              <div className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                {profile.role.toUpperCase()}
+              </div>
+            )}
+          </div>
           <Button
-            onClick={() => setWalletConnected((v) => !v)}
-            className="w-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary hover:opacity-95"
-            size="lg"
+            onClick={async () => { await signOut(); navigate({ to: "/onboarding" }); }}
+            variant="outline"
+            className="w-full border-border"
+            size="sm"
           >
-            <Wallet className="mr-2 h-4 w-4" />
-            {walletConnected ? "Wallet Connected" : "Connect Wallet"}
+            Disconnect
           </Button>
           <div className="space-y-1 border-t border-border pt-3 text-xs">
             <button className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-muted-foreground hover:bg-surface-elevated">
