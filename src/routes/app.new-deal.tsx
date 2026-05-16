@@ -80,7 +80,7 @@ function NewDeal() {
       const wallet = profile?.wallet_address;
 
       // No wallet → demo deploy (no on-chain signing).
-      if (!wallet || !isFreighterInstalled()) {
+      if (mode === "demo" || !wallet || !isFreighterInstalled()) {
         const fakeId = `tw_demo_${dealId.slice(0, 8)}`;
         if (user) await supabase.from("deals").update({ trustless_contract_id: fakeId }).eq("id", dealId);
         toast.success(`Escrow saved in demo mode · ${fakeId}`);
