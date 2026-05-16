@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { escrows as mockEscrows } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useMode } from "@/lib/mode";
 
 export const Route = createFileRoute("/app/escrows/")({
   component: EscrowsList,
