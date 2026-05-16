@@ -27,6 +27,7 @@ type DealRow = {
 
 function EscrowsList() {
   const { user } = useAuth();
+  const { mode } = useMode();
   const [deals, setDeals] = useState<DealRow[]>([]);
 
   useEffect(() => {
