@@ -62,7 +62,7 @@ function Landing() {
             <Link to="/onboarding">
               <Button variant="ghost" className="hidden md:inline-flex">Sign In</Button>
             </Link>
-            <Link to="/app">
+            <Link to="/onboarding">
               <Button className="bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary">
                 Launch App <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
