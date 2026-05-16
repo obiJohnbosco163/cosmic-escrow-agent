@@ -37,6 +37,7 @@ function NewDeal() {
     arbiter: "Kleros (default)",
   });
   const { profile, user } = useAuth();
+  const { mode } = useMode();
   const navigate = useNavigate();
   const deployUnsigned = useServerFn(deployUnsignedEscrow);
   const submitSigned = useServerFn(submitSignedTransaction);
