@@ -5,6 +5,7 @@ import { Card, PageHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useMode } from "@/lib/mode";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { deployUnsignedEscrow, submitSignedTransaction } from "@/lib/trustless-work.functions";
@@ -36,6 +37,7 @@ function NewDeal() {
     arbiter: "Kleros (default)",
   });
   const { profile, user } = useAuth();
+  const { mode } = useMode();
   const navigate = useNavigate();
   const deployUnsigned = useServerFn(deployUnsignedEscrow);
   const submitSigned = useServerFn(submitSignedTransaction);
@@ -78,7 +80,7 @@ function NewDeal() {
       const wallet = profile?.wallet_address;
 
       // No wallet → demo deploy (no on-chain signing).
-      if (!wallet || !isFreighterInstalled()) {
+      if (mode === "demo" || !wallet || !isFreighterInstalled()) {
         const fakeId = `tw_demo_${dealId.slice(0, 8)}`;
         if (user) await supabase.from("deals").update({ trustless_contract_id: fakeId }).eq("id", dealId);
         toast.success(`Escrow saved in demo mode · ${fakeId}`);

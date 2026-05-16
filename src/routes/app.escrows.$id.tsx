@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { escrows } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useMode } from "@/lib/mode";
 import { useServerFn } from "@tanstack/react-start";
 import { releaseFundsUnsigned, submitSignedTransaction } from "@/lib/trustless-work.functions";
 import { signStellarXdr, isFreighterInstalled, STELLAR_TESTNET_PASSPHRASE } from "@/lib/freighter";
@@ -31,11 +32,16 @@ export const Route = createFileRoute("/app/escrows/$id")({
 function EscrowDetail() {
   const { escrow } = Route.useLoaderData();
   const { profile } = useAuth();
+  const { mode } = useMode();
   const releaseUnsigned = useServerFn(releaseFundsUnsigned);
   const submitSigned = useServerFn(submitSignedTransaction);
   const [releasing, setReleasing] = useState(false);
 
   async function releaseFunds() {
+    if (mode === "demo") {
+      toast.success("Demo release simulated · funds marked released.");
+      return;
+    }
     const wallet = profile?.wallet_address;
     if (!wallet || !isFreighterInstalled()) {
       toast.error("Connect Freighter wallet to sign on-chain releases.");

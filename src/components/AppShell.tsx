@@ -20,6 +20,7 @@ import {
 import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMode } from "@/lib/mode";
 
 const Link = TLink as unknown as React.ComponentType<{
   to: string;
@@ -45,9 +46,9 @@ export function AppShell() {
   const { location } = useRouterState();
   const path = location.pathname;
   const { profile, signOut } = useAuth();
+  const { mode, setMode } = useMode();
   const navigate = useNavigate();
   const wallet = profile?.wallet_address ?? null;
-  const initials = wallet ? `${wallet.slice(0, 2)}` : "AP";
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -127,8 +128,25 @@ export function AppShell() {
             <kbd className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-border bg-surface-elevated px-2 py-0.5 text-[10px] font-mono text-muted-foreground">⌘K</kbd>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <div className="hidden items-center gap-2 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-medium md:flex">
-              <span className="h-1.5 w-1.5 rounded-full bg-success" /> Stellar Mainnet
+            <div className="hidden items-center rounded-full border border-border bg-surface p-0.5 text-xs font-semibold md:flex">
+              {(["demo", "live"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={cn(
+                    "rounded-full px-3 py-1 transition-colors",
+                    mode === m
+                      ? m === "live"
+                        ? "bg-success/20 text-success"
+                        : "bg-primary/20 text-primary"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  title={m === "live" ? "Wallet-bound escrows on Stellar" : "Mock data, no signing"}
+                >
+                  <span className={cn("mr-1.5 inline-block h-1.5 w-1.5 rounded-full", m === "live" ? "bg-success" : "bg-primary")} />
+                  {m === "live" ? "Live" : "Demo"}
+                </button>
+              ))}
             </div>
             <button className="relative grid h-10 w-10 place-items-center rounded-full border border-border bg-surface text-muted-foreground hover:text-foreground">
               <Bell className="h-4 w-4" />
