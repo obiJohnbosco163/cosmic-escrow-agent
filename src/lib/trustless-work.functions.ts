@@ -4,71 +4,110 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const TW_BASE_URL = "https://api.trustlesswork.com";
 
+function authHeaders() {
+  const apiKey = process.env.TRUSTLESS_WORK_API_KEY;
+  const apiId = process.env.TRUSTLESS_WORK_API_ID;
+  if (!apiKey) throw new Error("TRUSTLESS_WORK_API_KEY not configured");
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${apiKey}`,
+    ...(apiId ? { "X-API-ID": apiId } : {}),
+  };
+}
+
+async function twPost<T = unknown>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${TW_BASE_URL}${path}`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    console.error(`Trustless Work ${path} ${res.status}: ${text}`);
+    throw new Error(`Trustless Work ${path} failed (${res.status}): ${text.slice(0, 240)}`);
+  }
+  return text ? (JSON.parse(text) as T) : ({} as T);
+}
+
 const milestoneSchema = z.object({
   description: z.string().min(1).max(200),
-  amount: z.number().positive(),
+  amount: z.number().positive().optional(),
 });
 
-const createEscrowSchema = z.object({
+const deploySchema = z.object({
   dealId: z.string().uuid(),
   title: z.string().min(1).max(200),
+  description: z.string().max(500).optional(),
   amount: z.number().positive(),
-  currency: z.string().min(1).max(10),
-  buyerAddress: z.string().min(1).max(120),
-  supplierAddress: z.string().min(1).max(120),
+  platformFee: z.number().min(0).default(0.5),
+  signerAddress: z.string().min(1).max(120),
+  approverAddress: z.string().min(1).max(120),
+  serviceProviderAddress: z.string().min(1).max(120),
+  releaseSignerAddress: z.string().min(1).max(120),
+  platformAddress: z.string().min(1).max(120),
+  disputeResolverAddress: z.string().min(1).max(120),
+  receiverAddress: z.string().min(1).max(120),
+  trustlineAddress: z.string().min(1).max(120),
   milestones: z.array(milestoneSchema).min(1).max(20),
 });
 
-/**
- * Initialize a Trustless Work escrow contract for a deal.
- * Falls back to a deterministic mock contract id when the API is unreachable
- * (so the demo always shows a "deployed" state).
- */
-export const initializeTrustlessEscrow = createServerFn({ method: "POST" })
+/** Step 1 — ask Trustless Work for an unsigned deploy transaction (XDR). */
+export const deployUnsignedEscrow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => createEscrowSchema.parse(d))
-  .handler(async ({ data, context }) => {
-    const apiKey = process.env.TRUSTLESS_WORK_API_KEY;
-    const apiId = process.env.TRUSTLESS_WORK_API_ID;
+  .inputValidator((d) => deploySchema.parse(d))
+  .handler(async ({ data }) => {
+    const json = await twPost<{ unsignedTransaction: string }>("/deployer/single-release", {
+      signer: data.signerAddress,
+      engagementId: data.dealId,
+      title: data.title,
+      description: data.description ?? data.title,
+      roles: {
+        approver: data.approverAddress,
+        serviceProvider: data.serviceProviderAddress,
+        platformAddress: data.platformAddress,
+        releaseSigner: data.releaseSignerAddress,
+        disputeResolver: data.disputeResolverAddress,
+        receiver: data.receiverAddress,
+      },
+      amount: data.amount,
+      platformFee: data.platformFee,
+      milestones: data.milestones.map((m) => ({ description: m.description })),
+      trustline: { address: data.trustlineAddress },
+    });
+    return { unsignedTransaction: json.unsignedTransaction };
+  });
 
-    const fallbackContractId = `tw_demo_${data.dealId.slice(0, 8)}`;
+const submitSchema = z.object({ signedXdr: z.string().min(10) });
 
-    if (!apiKey) {
-      return { contractId: fallbackContractId, mode: "demo" as const };
-    }
+/** Step 2 — broadcast a wallet-signed transaction to Stellar via TW helper. */
+export const submitSignedTransaction = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => submitSchema.parse(d))
+  .handler(async ({ data }) => {
+    const json = await twPost<Record<string, unknown>>("/helper/send-transaction", {
+      signedXdr: data.signedXdr,
+    });
+    // TW returns escrow data including contractId on deploy
+    const contractId =
+      (json as { contractId?: string }).contractId ??
+      (json as { escrow?: { contractId?: string } }).escrow?.contractId ??
+      null;
+    return { contractId, raw: json };
+  });
 
-    try {
-      const res = await fetch(`${TW_BASE_URL}/deployer/single-release`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-          ...(apiId ? { "X-API-ID": apiId } : {}),
-        },
-        body: JSON.stringify({
-          engagementId: data.dealId,
-          title: data.title,
-          amount: data.amount,
-          asset: data.currency,
-          buyer: data.buyerAddress,
-          serviceProvider: data.supplierAddress,
-          platformAddress: data.buyerAddress,
-          milestones: data.milestones,
-          metadata: { ownerUserId: context.userId, source: "astrapilot" },
-        }),
-      });
+const releaseSchema = z.object({
+  contractId: z.string().min(1),
+  releaseSigner: z.string().min(1),
+});
 
-      if (!res.ok) {
-        console.warn("Trustless Work API non-OK:", res.status, await res.text());
-        return { contractId: fallbackContractId, mode: "fallback" as const };
-      }
-      const json = await res.json();
-      return {
-        contractId: json.contractId ?? json.id ?? fallbackContractId,
-        mode: "live" as const,
-      };
-    } catch (err) {
-      console.error("Trustless Work request failed:", err);
-      return { contractId: fallbackContractId, mode: "fallback" as const };
-    }
+/** Step 1 (release) — get an unsigned release-funds transaction. */
+export const releaseFundsUnsigned = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => releaseSchema.parse(d))
+  .handler(async ({ data }) => {
+    const json = await twPost<{ unsignedTransaction: string }>(
+      "/escrow/single-release/release-funds",
+      { contractId: data.contractId, releaseSigner: data.releaseSigner },
+    );
+    return { unsignedTransaction: json.unsignedTransaction };
   });
