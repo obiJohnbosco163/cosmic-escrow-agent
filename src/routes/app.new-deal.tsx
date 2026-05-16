@@ -37,10 +37,10 @@ function NewDeal() {
   });
   const { profile, user } = useAuth();
   const navigate = useNavigate();
-  const initEscrow = useServerFn(initializeTrustlessEscrow);
+  const deployUnsigned = useServerFn(deployUnsignedEscrow);
+  const submitSigned = useServerFn(submitSignedTransaction);
 
   async function deploy() {
-    if (!user) return;
     setBusy(true);
     try {
       const milestones = DEFAULT_MILESTONES.map((m) => ({
@@ -50,43 +50,73 @@ function NewDeal() {
         status: "pending" as const,
       }));
 
-      const { data: deal, error } = await supabase
-        .from("deals")
-        .insert({
-          user_id: user.id,
-          title: form.title,
-          commodity: form.commodity,
-          amount: form.amount,
-          currency: "USDC",
-          origin: form.route.split("→")[0]?.trim(),
-          destination: form.route.split("→")[1]?.trim(),
-          counterparty: form.counterparty,
-          status: "funded",
-          milestones,
-          documents: DEFAULT_DOCS,
-          risk_score: 18,
-        })
-        .select()
-        .single();
+      // Persist the deal (only if signed in). Demo mode skips DB.
+      let dealId = crypto.randomUUID();
+      if (user) {
+        const { data: deal, error } = await supabase
+          .from("deals")
+          .insert({
+            user_id: user.id,
+            title: form.title,
+            commodity: form.commodity,
+            amount: form.amount,
+            currency: "USDC",
+            origin: form.route.split("→")[0]?.trim(),
+            destination: form.route.split("→")[1]?.trim(),
+            counterparty: form.counterparty,
+            status: "funded",
+            milestones,
+            documents: DEFAULT_DOCS,
+            risk_score: 18,
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        dealId = deal.id;
+      }
 
-      if (error) throw error;
+      const wallet = profile?.wallet_address;
 
-      // Fire Trustless Work — server fn falls back to demo id if API unreachable
-      const tw = await initEscrow({
+      // No wallet → demo deploy (no on-chain signing).
+      if (!wallet || !isFreighterInstalled()) {
+        const fakeId = `tw_demo_${dealId.slice(0, 8)}`;
+        if (user) await supabase.from("deals").update({ trustless_contract_id: fakeId }).eq("id", dealId);
+        toast.success(`Escrow saved in demo mode · ${fakeId}`);
+        navigate({ to: "/app/escrows" });
+        return;
+      }
+
+      // Real on-chain Stellar flow via Trustless Work.
+      toast.info("Building escrow transaction…");
+      const { unsignedTransaction } = await deployUnsigned({
         data: {
-          dealId: deal.id,
+          dealId,
           title: form.title,
+          description: form.commodity,
           amount: form.amount,
-          currency: "USDC",
-          buyerAddress: profile?.wallet_address ?? "G_DEMO_BUYER",
-          supplierAddress: "G_DEMO_SUPPLIER",
-          milestones: milestones.map((m) => ({ description: m.name, amount: m.amount })),
+          platformFee: 0.5,
+          signerAddress: wallet,
+          approverAddress: wallet,
+          serviceProviderAddress: wallet, // demo: same wallet acts as supplier
+          releaseSignerAddress: wallet,
+          platformAddress: wallet,
+          disputeResolverAddress: wallet,
+          receiverAddress: wallet,
+          // Stellar testnet USDC issuer (Circle)
+          trustlineAddress: "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+          milestones: milestones.map((m) => ({ description: m.name })),
         },
       });
 
-      await supabase.from("deals").update({ trustless_contract_id: tw.contractId }).eq("id", deal.id);
+      toast.info("Sign the transaction in Freighter…");
+      const signedXdr = await signStellarXdr(unsignedTransaction, wallet, STELLAR_TESTNET_PASSPHRASE);
 
-      toast.success(`Escrow deployed (${tw.mode}) · ${tw.contractId}`);
+      toast.info("Broadcasting to Stellar…");
+      const result = await submitSigned({ data: { signedXdr } });
+      const contractId = result.contractId ?? `tw_${dealId.slice(0, 8)}`;
+
+      if (user) await supabase.from("deals").update({ trustless_contract_id: contractId }).eq("id", dealId);
+      toast.success(`Escrow deployed on Stellar · ${contractId}`);
       navigate({ to: "/app/escrows" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to deploy escrow");
