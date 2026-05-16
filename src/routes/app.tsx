@@ -1,6 +1,5 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
-import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/app")({
   component: GuardedApp,
