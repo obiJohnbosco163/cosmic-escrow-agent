@@ -45,7 +45,7 @@ function Onboarding() {
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">Join AstraPilot</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Choose your role and connect your Stellar wallet. Your wallet is your identity — every deal you create is signed and bound to it. AstraPilot never custodies funds.
+            Connecting a Stellar wallet is <span className="text-foreground font-medium">optional</span> — it binds deals to your identity and lets you deploy real escrows. You can also explore the AI agent and dashboard in demo mode without a wallet.
           </p>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2">
