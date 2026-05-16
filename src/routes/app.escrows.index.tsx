@@ -168,6 +168,7 @@ function EscrowsList() {
           </tbody>
         </table>
       </Card>
+      )}
     </div>
   );
 }
