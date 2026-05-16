@@ -5,6 +5,7 @@ import { Card, PageHeader } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
+import { useMode } from "@/lib/mode";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { deployUnsignedEscrow, submitSignedTransaction } from "@/lib/trustless-work.functions";
