@@ -45,7 +45,7 @@ function Onboarding() {
           </div>
           <h1 className="mt-3 text-3xl font-bold tracking-tight">Join AstraPilot</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Choose your role and connect your Stellar wallet. Your wallet is your identity — every deal you create is signed and bound to it. AstraPilot never custodies funds.
+            Connecting a Stellar wallet is <span className="text-foreground font-medium">optional</span> — it binds deals to your identity and lets you deploy real escrows. You can also explore the AI agent and dashboard in demo mode without a wallet.
           </p>
 
           <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -80,11 +80,22 @@ function Onboarding() {
             )}
           </div>
 
-          {session && (
-            <Link to="/app" className="mt-6 flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-              Already signed in — continue to dashboard <ArrowRight className="h-3 w-3" />
-            </Link>
-          )}
+          <div className="mt-6 flex flex-col items-center gap-2 border-t border-border pt-5 text-xs text-muted-foreground">
+            <div className="font-semibold uppercase tracking-wider text-[10px]">Or skip — wallet is optional</div>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Link to="/app/agent" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-3 py-1.5 hover:text-foreground hover:border-primary/40">
+                <Sparkles className="h-3 w-3 text-primary" /> Try the AI Agent
+              </Link>
+              <Link to="/app" className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-3 py-1.5 hover:text-foreground hover:border-primary/40">
+                Open demo dashboard <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            {session && (
+              <Link to="/app" className="mt-1 flex items-center justify-center gap-1.5 hover:text-foreground">
+                Already signed in — continue <ArrowRight className="h-3 w-3" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </div>
