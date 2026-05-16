@@ -1,9 +1,15 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Building2, Upload, FileText, Shield, ExternalLink, AlertTriangle, CheckCircle2, Clock, Lock } from "lucide-react";
+import { useState } from "react";
+import { ArrowLeft, Building2, Upload, FileText, Shield, ExternalLink, AlertTriangle, CheckCircle2, Clock, Lock, Loader2 } from "lucide-react";
 import { Card, PageHeader, StatusBadge } from "@/components/ui-kit";
 import { Button } from "@/components/ui/button";
 import { escrows } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { releaseFundsUnsigned, submitSignedTransaction } from "@/lib/trustless-work.functions";
+import { signStellarXdr, isFreighterInstalled, STELLAR_TESTNET_PASSPHRASE } from "@/lib/freighter";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/escrows/$id")({
   component: EscrowDetail,
@@ -24,6 +30,39 @@ export const Route = createFileRoute("/app/escrows/$id")({
 
 function EscrowDetail() {
   const { escrow } = Route.useLoaderData();
+  const { profile } = useAuth();
+  const releaseUnsigned = useServerFn(releaseFundsUnsigned);
+  const submitSigned = useServerFn(submitSignedTransaction);
+  const [releasing, setReleasing] = useState(false);
+
+  async function releaseFunds() {
+    const wallet = profile?.wallet_address;
+    if (!wallet || !isFreighterInstalled()) {
+      toast.error("Connect Freighter wallet to sign on-chain releases.");
+      return;
+    }
+    if (!escrow.contractId || escrow.contractId.startsWith("tw_demo_")) {
+      toast.error("This escrow is demo-only — deploy a real one from New Deal.");
+      return;
+    }
+    setReleasing(true);
+    try {
+      toast.info("Requesting release transaction…");
+      const { unsignedTransaction } = await releaseUnsigned({
+        data: { contractId: escrow.contractId, releaseSigner: wallet },
+      });
+      toast.info("Sign release in Freighter…");
+      const signedXdr = await signStellarXdr(unsignedTransaction, wallet, STELLAR_TESTNET_PASSPHRASE);
+      toast.info("Broadcasting to Stellar…");
+      await submitSigned({ data: { signedXdr } });
+      toast.success("Funds released on-chain ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Release failed");
+    } finally {
+      setReleasing(false);
+    }
+  }
+
   return (
     <div>
       <Link to="/app/escrows" className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
@@ -178,11 +217,12 @@ function EscrowDetail() {
             <p className="mt-3 text-sm text-muted-foreground">
               Confirm receipt of goods to release the final escrow tranche of <span className="font-semibold text-foreground">{escrow.pending.toLocaleString()} USDC</span> to the supplier.
             </p>
-            <Button className="mt-4 w-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary">
-              <Shield className="mr-2 h-4 w-4" /> Release Funds
+            <Button onClick={releaseFunds} disabled={releasing} className="mt-4 w-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary">
+              {releasing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+              {releasing ? "Signing & broadcasting…" : "Release Funds"}
             </Button>
             <div className="mt-2 text-center text-[11px] text-muted-foreground">
-              Action locked until Shipping phase completes.
+              Signs a Soroban release transaction via Freighter on Stellar.
             </div>
           </Card>
         </div>

@@ -9,12 +9,24 @@ declare global {
       getAddress: () => Promise<{ address: string; error?: string }>;
       requestAccess: () => Promise<{ address: string; error?: string }>;
       signMessage: (message: string, opts?: { address?: string; networkPassphrase?: string }) => Promise<{ signedMessage: string; signerAddress: string; error?: string }>;
+      signTransaction: (xdr: string, opts?: { address?: string; networkPassphrase?: string }) => Promise<{ signedTxXdr: string; signerAddress: string; error?: string }>;
       getNetwork: () => Promise<{ network: string; networkPassphrase: string; error?: string }>;
     };
   }
 }
 
+export const STELLAR_TESTNET_PASSPHRASE = "Test SDF Network ; September 2015";
+export const STELLAR_PUBLIC_PASSPHRASE = "Public Global Stellar Network ; September 2015";
 export const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
+
+/** Sign a Stellar transaction XDR with Freighter and return the signed XDR. */
+export async function signStellarXdr(xdr: string, address: string, networkPassphrase = STELLAR_TESTNET_PASSPHRASE): Promise<string> {
+  if (!isFreighterInstalled()) throw new Error("Freighter wallet not detected. Install it from freighter.app.");
+  const res = await window.freighterApi!.signTransaction(xdr, { address, networkPassphrase });
+  if (res.error) throw new Error(res.error);
+  if (!res.signedTxXdr) throw new Error("Wallet did not return a signed transaction.");
+  return res.signedTxXdr;
+}
 
 export function isFreighterInstalled(): boolean {
   return typeof window !== "undefined" && !!window.freighterApi;
