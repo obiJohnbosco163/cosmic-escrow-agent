@@ -217,11 +217,12 @@ function EscrowDetail() {
             <p className="mt-3 text-sm text-muted-foreground">
               Confirm receipt of goods to release the final escrow tranche of <span className="font-semibold text-foreground">{escrow.pending.toLocaleString()} USDC</span> to the supplier.
             </p>
-            <Button className="mt-4 w-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary">
-              <Shield className="mr-2 h-4 w-4" /> Release Funds
+            <Button onClick={releaseFunds} disabled={releasing} className="mt-4 w-full bg-gradient-to-r from-primary to-primary-glow text-primary-foreground glow-primary">
+              {releasing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
+              {releasing ? "Signing & broadcasting…" : "Release Funds"}
             </Button>
             <div className="mt-2 text-center text-[11px] text-muted-foreground">
-              Action locked until Shipping phase completes.
+              Signs a Soroban release transaction via Freighter on Stellar.
             </div>
           </Card>
         </div>
