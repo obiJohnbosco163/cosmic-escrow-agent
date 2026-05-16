@@ -63,11 +63,22 @@ function EscrowsList() {
         </div>
       </div>
 
-      {deals.length > 0 && (
+      <div className={`mb-4 rounded-2xl border px-4 py-2.5 text-xs ${mode === "live" ? "border-success/30 bg-success/5 text-success" : "border-primary/30 bg-primary/5 text-primary"}`}>
+        {mode === "live"
+          ? "Live mode · showing only wallet-bound escrows you've deployed via Trustless Work."
+          : "Demo mode · showing simulated network activity. Switch to Live in the header to see your own escrows."}
+      </div>
+
+      {mode === "live" && (
         <Card className="mb-4 overflow-hidden">
           <div className="border-b border-border bg-primary/5 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-primary">
             Your deals
           </div>
+          {deals.length === 0 ? (
+            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+              No live escrows yet. <Link to="/app/new-deal" className="font-semibold text-primary hover:underline">Create one →</Link>
+            </div>
+          ) : (
           <table className="w-full text-sm">
             <thead className="bg-surface-elevated text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
@@ -100,9 +111,11 @@ function EscrowsList() {
               ))}
             </tbody>
           </table>
+          )}
         </Card>
       )}
 
+      {mode === "demo" && (
       <Card className="overflow-hidden">
         <div className="border-b border-border bg-surface-elevated/40 px-5 py-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           Demo network activity
