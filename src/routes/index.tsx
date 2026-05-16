@@ -100,9 +100,11 @@ function Landing() {
                 <Globe2 className="mr-2 h-4 w-4" /> Watch Live Escrow
               </Button>
             </Link>
-            <Button size="lg" variant="ghost" className="text-muted-foreground">
-              Connect Wallet
-            </Button>
+            <Link to="/onboarding">
+              <Button size="lg" variant="ghost" className="text-muted-foreground">
+                Connect Wallet
+              </Button>
+            </Link>
           </div>
 
           {/* Trust badges */}
