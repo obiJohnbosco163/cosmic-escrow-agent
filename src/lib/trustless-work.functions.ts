@@ -84,15 +84,12 @@ export const submitSignedTransaction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => submitSchema.parse(d))
   .handler(async ({ data }) => {
-    const json = await twPost<Record<string, unknown>>("/helper/send-transaction", {
-      signedXdr: data.signedXdr,
-    });
-    // TW returns escrow data including contractId on deploy
-    const contractId =
-      (json as { contractId?: string }).contractId ??
-      (json as { escrow?: { contractId?: string } }).escrow?.contractId ??
-      null;
-    return { contractId, raw: json };
+    const json = await twPost<{ contractId?: string; escrow?: { contractId?: string } }>(
+      "/helper/send-transaction",
+      { signedXdr: data.signedXdr },
+    );
+    const contractId = json.contractId ?? json.escrow?.contractId ?? null;
+    return { contractId };
   });
 
 const releaseSchema = z.object({
