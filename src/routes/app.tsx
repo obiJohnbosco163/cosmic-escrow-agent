@@ -7,14 +7,8 @@ export const Route = createFileRoute("/app")({
 });
 
 function GuardedApp() {
-  const { session, loading } = useAuth();
-  if (loading) {
-    return (
-      <div className="grid min-h-screen place-items-center bg-background">
-        <div className="text-sm text-muted-foreground">Loading workspace…</div>
-      </div>
-    );
-  }
-  if (!session) return <Navigate to="/onboarding" />;
+  // Wallet connection is optional — the app is accessible in demo mode
+  // without an authenticated wallet. Features that require identity will
+  // prompt for connection inline.
   return <AppShell />;
 }
