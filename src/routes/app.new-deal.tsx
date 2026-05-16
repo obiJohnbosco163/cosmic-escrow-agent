@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { initializeTrustlessEscrow } from "@/lib/trustless-work.functions";
+import { deployUnsignedEscrow, submitSignedTransaction } from "@/lib/trustless-work.functions";
+import { signStellarXdr, isFreighterInstalled, STELLAR_TESTNET_PASSPHRASE } from "@/lib/freighter";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/new-deal")({ component: NewDeal });
