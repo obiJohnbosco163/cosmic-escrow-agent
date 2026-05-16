@@ -20,6 +20,7 @@ import {
 import { AppLogo } from "@/components/AppLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useMode } from "@/lib/mode";
 
 const Link = TLink as unknown as React.ComponentType<{
   to: string;
