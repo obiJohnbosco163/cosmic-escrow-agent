@@ -46,9 +46,9 @@ export function AppShell() {
   const { location } = useRouterState();
   const path = location.pathname;
   const { profile, signOut } = useAuth();
+  const { mode, setMode } = useMode();
   const navigate = useNavigate();
   const wallet = profile?.wallet_address ?? null;
-  const initials = wallet ? `${wallet.slice(0, 2)}` : "AP";
 
   return (
     <div className="flex min-h-screen bg-background">
