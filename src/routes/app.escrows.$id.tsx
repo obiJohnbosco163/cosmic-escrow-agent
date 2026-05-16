@@ -30,6 +30,39 @@ export const Route = createFileRoute("/app/escrows/$id")({
 
 function EscrowDetail() {
   const { escrow } = Route.useLoaderData();
+  const { profile } = useAuth();
+  const releaseUnsigned = useServerFn(releaseFundsUnsigned);
+  const submitSigned = useServerFn(submitSignedTransaction);
+  const [releasing, setReleasing] = useState(false);
+
+  async function releaseFunds() {
+    const wallet = profile?.wallet_address;
+    if (!wallet || !isFreighterInstalled()) {
+      toast.error("Connect Freighter wallet to sign on-chain releases.");
+      return;
+    }
+    if (!escrow.contractId || escrow.contractId.startsWith("tw_demo_")) {
+      toast.error("This escrow is demo-only — deploy a real one from New Deal.");
+      return;
+    }
+    setReleasing(true);
+    try {
+      toast.info("Requesting release transaction…");
+      const { unsignedTransaction } = await releaseUnsigned({
+        data: { contractId: escrow.contractId, releaseSigner: wallet },
+      });
+      toast.info("Sign release in Freighter…");
+      const signedXdr = await signStellarXdr(unsignedTransaction, wallet, STELLAR_TESTNET_PASSPHRASE);
+      toast.info("Broadcasting to Stellar…");
+      await submitSigned({ data: { signedXdr } });
+      toast.success("Funds released on-chain ✓");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Release failed");
+    } finally {
+      setReleasing(false);
+    }
+  }
+
   return (
     <div>
       <Link to="/app/escrows" className="mb-4 inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
