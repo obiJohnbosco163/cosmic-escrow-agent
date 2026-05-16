@@ -51,7 +51,7 @@ function NewDeal() {
       }));
 
       // Persist the deal (only if signed in). Demo mode skips DB.
-      let dealId = crypto.randomUUID();
+      let dealId: string = crypto.randomUUID();
       if (user) {
         const { data: deal, error } = await supabase
           .from("deals")
