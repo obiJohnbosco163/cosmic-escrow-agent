@@ -200,10 +200,31 @@ function EscrowDetail() {
                 <div><span className="text-foreground">timeout:</span> 14 days remaining</div>
                 <div><span className="text-foreground">hash:</span> {escrow.contractId}</div>
               </div>
+              {escrow.contractId && !escrow.contractId.startsWith("tw_demo_") && (
+                <a
+                  href={`https://stellar.expert/explorer/testnet/contract/${escrow.contractId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
+                >
+                  Escrow Viewer <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
             </div>
-            <Button variant="outline" className="mt-4 w-full border-border">
-              Open in Explorer <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
-            </Button>
+            {escrow.contractId && !escrow.contractId.startsWith("tw_demo_") ? (
+              <a
+                href={`https://stellar.expert/explorer/testnet/contract/${escrow.contractId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex w-full items-center justify-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Open in Explorer <ExternalLink className="ml-1.5 h-3.5 w-3.5" />
+              </a>
+            ) : (
+              <div className="mt-4 w-full rounded-md border border-border bg-surface px-4 py-2 text-center text-sm text-muted-foreground">
+                Demo escrow — no on-chain viewer
+              </div>
+            )}
           </Card>
 
           {/* Parties */}
